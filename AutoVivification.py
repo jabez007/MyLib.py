@@ -9,8 +9,8 @@ class AutoVivification(dict):
     null = None  # float('nan')
 
     def __init__(self, iterable=None):
+        dict.__init__(self)
         if iterable:
-            # dict.__init__(self, iterable, **kwargs)  # can't find a way to run this without throwing error yet
             AutoVivification._load_dict_(iterable, self)
     '''
     def __getitem__(self, key):
@@ -78,17 +78,18 @@ if __name__ == "__main__":
     from time import time
     start = time()
 
-    iterate = {'a': 'Hello', 'b': 'World'}
+    # test that we can initialize an object
+    iterate = {'a': 'Hello',
+               'b': 'World',
+               'c': ['this', 'is', 'a', 'list']}
     test_init = AutoVivification(iterate)
-    print test_init
+    # test that we actually have an auto-viv object
+    test_init['a']['b'] = "hello world"
 
-    test_save = AutoVivification()
-    test_save['a'] = "hello"
-    test_save['b'] = "world"
-    test_save['a']['b'] = "hello world"
-    print test_save.get_item('a', 'b')
-    test_save.save("test.json")
+    # test saving
+    test_init.save("test.json")
 
+    # then test loading that object back in - should use same functionality as initializing
     test_load = AutoVivification.load('test.json')
     print test_load.get_item('a', 'b')
 
