@@ -12,6 +12,7 @@ class AutoVivification(dict):
         dict.__init__(self)
         if iterable:
             AutoVivification._load_dict_(iterable, self)
+
     '''
     def __getitem__(self, key):
         try:
@@ -37,11 +38,14 @@ class AutoVivification(dict):
             obj = obj[arg]
         return obj[AutoVivification.null]
         
-    def set_item(self, keys, value):
+    def put_item(self, keys, value):
         obj = self
         for key in keys[:-1]:
             obj = obj[key]
         obj[keys[-1]] = value
+
+    def merge(self, iterable):
+        AutoVivification._load_dict_(iterable, self)
 
     def save(self, file_path):
         dump_string = json.dumps(self,
@@ -63,7 +67,7 @@ class AutoVivification(dict):
     @staticmethod
     def _load_dict_(iterable, out_object):
         for k, v, in iterable.iteritems():
-            if k == 'null':
+            if k == 'null':  # Translating JSON to Python
                 k = None
 
             if isinstance(v, dict):
@@ -83,15 +87,116 @@ if __name__ == "__main__":
                'b': 'World',
                'c': ['this', 'is', 'a', 'list']}
     test_init = AutoVivification(iterate)
+    '''
+    {
+        "a": {
+            "null": "Hello"
+            },
+        "b": {
+            "null": "World"
+            },
+        "c": {
+            "null": [
+                "this",
+                "is",
+                "a",
+                "list"
+                ]
+            }
+    }
+    '''
+
     # test that we actually have an auto-viv object
-    test_init['a']['b'] = "hello world"
+    test_init['a']['hello'] = "world"
+    '''
+       {
+           "a": {
+               "null": "Hello",
+               "hello": {
+                   "null": "world"
+                   }
+               },
+           "b": {
+               "null": "World"
+               },
+           "c": {
+               "null": [
+                   "this",
+                   "is",
+                   "a",
+                   "list"
+                   ]
+               }
+       }
+    '''
 
     # test saving
     test_init.save("test.json")
 
     # then test loading that object back in - should use same functionality as initializing
     test_load = AutoVivification.load('test.json')
-    print test_load.get_item('a', 'b')
+    print test_load.get_item('a', 'hello')
+
+    # can we merge a dict into the auto-viv?
+    test_load['a'].merge({'test': 'merged'})
+    print test_load.get_item('a', 'test')
+    '''
+       {
+           "a": {
+               "null": "Hello",
+               "hello": {
+                   "null": "world"
+                   },
+               "test": {
+                   "null": "merged"
+                   }
+               },
+           "b": {
+               "null": "World"
+               },
+           "c": {
+               "null": [
+                   "this",
+                   "is",
+                   "a",
+                   "list"
+                   ]
+               }
+       }
+       '''
+
+    # can we merge another auto-viv into the auto-viv?
+    test_load['b'].merge(AutoVivification({'test': 'merged'}))
+    print test_load.get_item('b', 'test')
+    '''
+       {
+           "a": {
+               "null": "Hello",
+               "hello": {
+                   "null": "world"
+                   },
+               "test": {
+                   "null": "merged"
+                   }
+               },
+           "b": {
+               "null": "World",
+               "test": {
+                   "null": "merged"
+                   }
+               },
+           "c": {
+               "null": [
+                   "this",
+                   "is",
+                   "a",
+                   "list"
+                   ]
+               }
+       }
+       '''
+
+    print test_load
 
     finished = time() - start
     print "finished in %f seconds" % finished
