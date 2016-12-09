@@ -2,7 +2,7 @@
 import json
 
 
-class MyConfig:
+class MyConfig(object):
     
     def __init__(self, config_file='config'):
         with open(config_file, 'r') as f:
