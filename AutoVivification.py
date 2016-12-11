@@ -8,10 +8,12 @@ class AutoVivification(dict):
     """
     null = None  # float('nan')
 
-    def __init__(self, iterable=None):
+    def __init__(self, iterable=None, iterable_file=None):
         dict.__init__(self)
         if iterable:
-            AutoVivification._load_dict_(iterable, self)
+            self._load_dict_(iterable)
+        elif iterable_file:
+            self._load_(iterable_file)
 
     '''
     def __getitem__(self, key):
@@ -23,11 +25,11 @@ class AutoVivification(dict):
     '''
     
     def __missing__(self, key):
-        self[key] = value = type(self)()
+        self[key] = value = AutoVivification()
         return value
         
     def __setitem__(self, key, value):
-        if isinstance(value, type(self)) or key == AutoVivification.null:
+        if isinstance(value, AutoVivification) or key == AutoVivification.null:
             dict.__setitem__(self, key, value)
         else:
             dict.__setitem__(self[key], AutoVivification.null, value)
@@ -45,7 +47,7 @@ class AutoVivification(dict):
         obj[keys[-1]] = value
 
     def merge(self, iterable):
-        AutoVivification._load_dict_(iterable, self)
+        self._load_dict_(iterable)
 
     def save(self, file_path):
         dump_string = json.dumps(self,
@@ -53,27 +55,23 @@ class AutoVivification(dict):
         with open(file_path, 'w') as output:
             output.write(dump_string)
 
-    @staticmethod
-    def load(file_path):
-        loaded_viv = AutoVivification()
-
+    # was a @staticmethod
+    def _load_(self, file_path):
         with open(file_path, 'r') as input_file:
-            loaded = json.load(input_file)
+            loaded_json = json.load(input_file)
 
-        AutoVivification._load_dict_(loaded, loaded_viv)
+        self._load_dict_(loaded_json)
 
-        return loaded_viv
-
-    @staticmethod
-    def _load_dict_(iterable, out_object):
+    # was a @staticmethod
+    def _load_dict_(self, iterable):
         for k, v, in iterable.iteritems():
             if k == 'null':  # Translating JSON to Python
                 k = None
 
             if isinstance(v, dict):
-                AutoVivification._load_dict_(v, out_object[k])
+                self[k]._load_dict_(v)
             else:
-                out_object[k] = v
+                self[k] = v
 
 # # # #
 
@@ -86,7 +84,7 @@ if __name__ == "__main__":
     iterate = {'a': 'Hello',
                'b': 'World',
                'c': ['this', 'is', 'a', 'list']}
-    test_init = AutoVivification(iterate)
+    test_init = AutoVivification(iterable=iterate)
     '''
     {
         "a": {
@@ -134,7 +132,7 @@ if __name__ == "__main__":
     test_init.save("test.json")
 
     # then test loading that object back in - should use same functionality as initializing
-    test_load = AutoVivification.load('test.json')
+    test_load = AutoVivification(iterable_file='test.json')
     print test_load.get_item('a', 'hello')
 
     # can we merge a dict into the auto-viv?
