@@ -16,7 +16,7 @@ class MyLog(logging.Logger):
         logging.Logger.__init__(self, name, log_level)
 
         # create a file handler
-        log_path = os.path.join(os.getcwd(), "Log", name)  # os.path.dirname(os.path.realpath(__file__))
+        log_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), name)
         if not os.path.isdir(log_path):
             os.mkdir(log_path)
         log_filename = ".".join([level, file_ext])
